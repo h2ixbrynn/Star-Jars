@@ -1,0 +1,124 @@
+import { Language } from "./types";
+
+export const MORANDI_COLORS = [
+  '#9BA9BB', // Slate Blue
+  '#A5B5AA', // Sage Green
+  '#D3C4BE', // Dusty Pink/Brown
+  '#C89F9C', // Terracotta
+  '#8E9EAB', // Cool Grey
+  '#B5A89E', // Warm Taupe
+  '#8F9E8B', // Olive
+  '#B7C0EE', // Periwinkle
+];
+
+export const MAX_NOTE_LENGTH = 140;
+
+export const JAR_WIDTH = 200; // px
+export const JAR_HEIGHT = 280; // px
+
+export const TRANSLATIONS: Record<Language, Record<string, string>> = {
+  en: {
+    appTitle: "My Star Jars",
+    appSubtitle: "Collect your moments, one star at a time.",
+    stats: "Stats",
+    shelfMode: "Shelf Mode",
+    carouselView: "Carousel",
+    createJar: "Create Jar",
+    startNewJar: "Start a New Jar",
+    habitNameLabel: "Habit or Idea Name",
+    habitPlaceholder: "e.g. Learning French...",
+    aiDesigning: "AI is designing your jar...",
+    cancel: "Cancel",
+    create: "Create",
+    back: "Back",
+    starsCollected: "stars collected",
+    foldStar: "Fold a New Star",
+    reflectAI: "Reflect with AI",
+    recentMemories: "Recent Memories",
+    noNotes: "No notes yet.",
+    writeMemory: "Write your memory",
+    todayFelt: "Today I felt...",
+    chars: "CHARS",
+    foldIntoStar: "Fold into Star",
+    makingWish: "Making a wish...",
+    progressReport: "Progress Report",
+    totalHabits: "Total Habits",
+    totalMemories: "Total Memories",
+    avgStars: "Avg Stars/Jar",
+    starDist: "Star Distribution",
+    newShelf: "New Shelf",
+    moveToShelf: "Move to...",
+    add: "Add",
+    shelfName: "Shelf Name",
+    emptyShelf: "Empty Shelf",
+    noJars: "No jars yet. Start a new habit!",
+    lockedStats: "Collect 10 jars to unlock",
+    lockedShelf: "Collect 20 jars to unlock",
+    delete: "Delete",
+    rename: "Rename",
+    editShelf: "Edit Shelf",
+    confirmDelete: "Are you sure you want to delete?",
+    irreversible: "This action is irreversible.",
+    deleteJar: "Delete Jar",
+    deleteShelf: "Delete Shelf",
+    confirm: "Confirm",
+    save: "Save",
+    unlockedStatsTitle: "Statistics Unlocked!",
+    unlockedShelfTitle: "Shelf Mode Unlocked!",
+    unlockedStatsMsg: "You have collected 10 jars. You can now view your progress report.",
+    unlockedShelfMsg: "You have collected 20 jars. You can now organize your jars on custom shelves.",
+    ok: "OK"
+  },
+  zh: {
+    appTitle: "我的星愿瓶",
+    appSubtitle: "收集时光，点滴成星。",
+    stats: "统计",
+    shelfMode: "书架模式",
+    carouselView: "浏览模式",
+    createJar: "新建瓶子",
+    startNewJar: "开启一个新瓶子",
+    habitNameLabel: "习惯或想法名称",
+    habitPlaceholder: "例如：晨跑、阅读...",
+    aiDesigning: "AI正在为你定制瓶子...",
+    cancel: "取消",
+    create: "创建",
+    back: "返回",
+    starsCollected: "颗星星",
+    foldStar: "折一颗星星",
+    reflectAI: "AI 回顾",
+    recentMemories: "最近的回忆",
+    noNotes: "还没有记录，开始吧。",
+    writeMemory: "写下此刻的想法",
+    todayFelt: "今天感觉...",
+    chars: "字数",
+    foldIntoStar: "折成星星",
+    makingWish: "正在封存记忆...",
+    progressReport: "进度报告",
+    totalHabits: "习惯总数",
+    totalMemories: "星星总数",
+    avgStars: "平均星星/瓶",
+    starDist: "星星分布",
+    newShelf: "新建书架",
+    moveToShelf: "移动到...",
+    add: "添加",
+    shelfName: "书架名称",
+    emptyShelf: "这个架子是空的",
+    noJars: "还没有瓶子，创建一个新习惯吧！",
+    lockedStats: "集齐10个瓶子解锁统计",
+    lockedShelf: "集齐20个瓶子解锁书架",
+    delete: "删除",
+    rename: "重命名",
+    editShelf: "编辑书架",
+    confirmDelete: "确认删除吗？",
+    irreversible: "此操作不可逆转。",
+    deleteJar: "删除瓶子",
+    deleteShelf: "删除书架",
+    confirm: "确认删除",
+    save: "保存",
+    unlockedStatsTitle: "统计功能已解锁！",
+    unlockedShelfTitle: "书架功能已解锁！",
+    unlockedStatsMsg: "你已经收集了10个瓶子。现在可以查看进度报告了。",
+    unlockedShelfMsg: "你已经收集了20个瓶子。现在可以在书架上整理你的瓶子了。",
+    ok: "知道了"
+  }
+};
