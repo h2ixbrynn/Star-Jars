@@ -67,7 +67,11 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     unlockedShelfTitle: "Shelf Mode Unlocked!",
     unlockedStatsMsg: "You have collected 10 jars. You can now view your progress report.",
     unlockedShelfMsg: "You have collected 20 jars. You can now organize your jars on custom shelves.",
-    ok: "OK"
+    ok: "OK",
+    history: "Star History",
+    viewHistory: "View Timeline",
+    historyTitle: "Journey Timeline",
+    editName: "Edit Name"
   },
   zh: {
     appTitle: "我的星愿瓶",
@@ -119,6 +123,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     unlockedShelfTitle: "书架功能已解锁！",
     unlockedStatsMsg: "你已经收集了10个瓶子。现在可以查看进度报告了。",
     unlockedShelfMsg: "你已经收集了20个瓶子。现在可以在书架上整理你的瓶子了。",
-    ok: "知道了"
+    ok: "知道了",
+    history: "星星历史",
+    viewHistory: "查看时间轴",
+    historyTitle: "时光足迹",
+    editName: "修改名称"
   }
 };

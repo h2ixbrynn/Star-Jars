@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, X, ArrowLeft, Send, Sparkles, Loader2, BarChart2, LayoutGrid, Library, ChevronRight, ChevronLeft, FolderPlus, Move, Lock, Globe, Trash2, Edit2, AlertTriangle, Check } from 'lucide-react';
+import { Plus, X, ArrowLeft, Send, Sparkles, Loader2, BarChart2, LayoutGrid, Library, ChevronRight, ChevronLeft, FolderPlus, Move, Lock, Globe, Trash2, Edit2, AlertTriangle, Check, Calendar, History } from 'lucide-react';
 import { Jar, StarNote, AppView, Language } from './types';
 import { MORANDI_COLORS, MAX_NOTE_LENGTH, TRANSLATIONS } from './constants';
 import { loadJars, saveJars } from './services/storageService';
@@ -50,9 +50,8 @@ const JarItem: React.FC<JarItemProps> = ({
   handleOpenJar
 }) => {
     const longPressProps = useLongPress(() => {
-        if (isShelfMode) { // Only allow complex management in shelf mode or generally? Let's allow everywhere for mobile friendliness
-           setContextMenuJar(jar);
-        }
+        // Mobile Long Press Logic
+        setContextMenuJar(jar);
     }, 600);
 
     return (
@@ -93,9 +92,13 @@ function App() {
   const [contextMenuJar, setContextMenuJar] = useState<Jar | null>(null); // For Mobile Long Press
   const [jarToDelete, setJarToDelete] = useState<Jar | null>(null);
   const [shelfToDelete, setShelfToDelete] = useState<string | null>(null);
-  const [editingJar, setEditingJar] = useState<Jar | null>(null);
   const [editingShelf, setEditingShelf] = useState<{old: string, new: string} | null>(null);
   const [unlockNotification, setUnlockNotification] = useState<{title: string, msg: string} | null>(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+
+  // Edit Jar Name State (In Detail View)
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempJarName, setTempJarName] = useState('');
 
   // Creation
   const [isCreatingJar, setIsCreatingJar] = useState(false);
@@ -138,8 +141,7 @@ function App() {
   // Unlock Notifications Logic
   useEffect(() => {
     const jarCount = jars.length;
-    // We use sessionStorage to ensure we don't annoy the user on every reload, 
-    // but in a real app this should be in persistent storage.
+    // We use sessionStorage to ensure we don't annoy the user on every reload
     const hasSeenStats = sessionStorage.getItem('seenStatsUnlock');
     const hasSeenShelf = sessionStorage.getItem('seenShelfUnlock');
 
@@ -148,8 +150,8 @@ function App() {
         sessionStorage.setItem('seenStatsUnlock', 'true');
     }
     
-    if (jarCount === 20 && !hasSeenShelf) {
-        setUnlockNotification({ title: t.unlockedShelfTitle, msg: t.unlockedShelfMsg });
+    if (jarCount === 15 && !hasSeenShelf) {
+        setUnlockNotification({ title: t.unlockedShelfTitle, msg: "You have collected 15 jars. Shelf mode unlocked!" });
         sessionStorage.setItem('seenShelfUnlock', 'true');
     }
   }, [jars.length, t]);
@@ -169,8 +171,11 @@ function App() {
   const activeJar = jars.find(j => j.id === activeJarId);
   const totalStars = jars.reduce((acc, jar) => acc + jar.stars.length, 0);
 
+  // RULES: 
+  // Stats unlock at 10 jars. 
+  // Shelf mode unlocks at 15 jars.
   const isStatsUnlocked = jars.length >= 10;
-  const isShelfUnlocked = jars.length >= 20;
+  const isShelfUnlocked = jars.length >= 15;
 
   // --- ACTIONS ---
 
@@ -234,11 +239,10 @@ function App() {
       }
   };
 
-  const handleRenameJar = () => {
-      if (!editingJar || !editingJar.name.trim()) return;
-      setJars(prev => prev.map(j => j.id === editingJar.id ? { ...j, name: editingJar.name } : j));
-      setEditingJar(null);
-      setContextMenuJar(null);
+  const handleSaveJarName = () => {
+      if (!activeJar || !tempJarName.trim()) return;
+      setJars(prev => prev.map(j => j.id === activeJar.id ? { ...j, name: tempJarName.trim() } : j));
+      setIsEditingName(false);
   };
 
   const handleRenameShelf = () => {
@@ -253,8 +257,6 @@ function App() {
   const handleDeleteShelf = () => {
       if (!shelfToDelete) return;
       setShelves(prev => prev.filter(s => s !== shelfToDelete));
-      // Move jars in deleted shelf to "My Collection" (or delete them? The prompt implies deletion of shelf is strict)
-      // "All deletion is irreversible" - let's delete the jars too to match the "Irreversible" warning strictness
       setJars(prev => prev.filter(j => j.shelf !== shelfToDelete));
       setShelfToDelete(null);
   };
@@ -264,11 +266,10 @@ function App() {
   const onDragStart = (e: React.DragEvent, jarId: string) => {
       setDraggedJarId(jarId);
       e.dataTransfer.effectAllowed = 'move';
-      // Create a transparent drag image or standard one
   };
 
   const onDragOver = (e: React.DragEvent) => {
-      e.preventDefault(); // Necessary to allow dropping
+      e.preventDefault(); 
       e.dataTransfer.dropEffect = 'move';
   };
 
@@ -286,6 +287,8 @@ function App() {
     setActiveJarId(id);
     setView(AppView.JAR_DETAIL);
     setReflectionText(null);
+    setIsEditingName(false);
+    setShowHistoryModal(false);
   };
 
   const handleBackToDashboard = () => {
@@ -294,6 +297,7 @@ function App() {
     setIsFoldingStar(false);
     setFoldingStage('writing');
     setNewNoteContent('');
+    setShowHistoryModal(false);
   };
 
   const nextPage = () => setCurrentPage(p => (p + 1) % Math.ceil(jars.length / itemsPerPage));
@@ -352,29 +356,29 @@ function App() {
         </div>
         
         <div className="flex flex-wrap gap-4 items-center">
-             <div className="relative group">
+             
+             {/* Stats Button - HIDDEN UNTIL UNLOCKED */}
+             {isStatsUnlocked && (
                 <button 
-                    onClick={() => isStatsUnlocked && setView(AppView.STATS)}
-                    disabled={!isStatsUnlocked}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-sm transition-all ${isStatsUnlocked ? 'bg-white text-morandi-charcoal hover:bg-morandi-slate hover:text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                    onClick={() => setView(AppView.STATS)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full shadow-sm transition-all bg-white text-morandi-charcoal hover:bg-morandi-slate hover:text-white"
                  >
-                    {isStatsUnlocked ? <BarChart2 size={18} /> : <Lock size={14} />} {t.stats}
+                    <BarChart2 size={18} /> {t.stats}
                  </button>
-             </div>
+             )}
 
-             <div className="relative group">
+             {/* Shelf Button - HIDDEN UNTIL UNLOCKED */}
+             {isShelfUnlocked && (
                  <button 
-                    onClick={() => isShelfUnlocked && setIsShelfMode(!isShelfMode)}
-                    disabled={!isShelfUnlocked}
+                    onClick={() => setIsShelfMode(!isShelfMode)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-sm transition-all ${
-                        !isShelfUnlocked ? 'bg-gray-200 text-gray-400 cursor-not-allowed' :
                         isShelfMode ? 'bg-morandi-charcoal text-white' : 'bg-white text-morandi-charcoal'
                     }`}
                  >
-                    {!isShelfUnlocked ? <Lock size={14}/> : isShelfMode ? <LayoutGrid size={18}/> : <Library size={18}/>} 
-                    {!isShelfUnlocked ? t.shelfMode : isShelfMode ? t.carouselView : t.shelfMode}
+                    {isShelfMode ? <LayoutGrid size={18}/> : <Library size={18}/>} 
+                    {isShelfMode ? t.carouselView : t.shelfMode}
                  </button>
-             </div>
+             )}
 
              <button onClick={handleToggleLanguage} className="p-2 rounded-full bg-white text-morandi-charcoal hover:bg-morandi-bg transition-colors shadow-sm">
                  <Globe size={20} />
@@ -520,14 +524,12 @@ function App() {
          </div>
       )}
 
-      {/* 3. Mobile Context Menu (Long Press) */}
+      {/* 3. Mobile Context Menu (Long Press) - NO RENAME HERE */}
       {contextMenuJar && (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setContextMenuJar(null)}>
             <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-xs" onClick={e => e.stopPropagation()}>
                 <h3 className="text-xl font-bold mb-4 text-center">{contextMenuJar.name}</h3>
                 <div className="flex flex-col gap-2">
-                    <button onClick={() => setEditingJar(contextMenuJar)} className="w-full py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium text-morandi-charcoal flex items-center justify-center gap-2"><Edit2 size={16}/> {t.rename}</button>
-                    
                     {/* Move to... submenu */}
                     <div className="py-2">
                         <p className="text-xs text-center text-gray-400 mb-2 uppercase">{t.moveToShelf}</p>
@@ -562,20 +564,6 @@ function App() {
                   </div>
               </div>
           </div>
-      )}
-
-      {/* 5. Rename Jar Modal */}
-      {editingJar && (
-         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-            <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm">
-                <h3 className="text-xl font-bold mb-4">{t.rename}</h3>
-                <input autoFocus type="text" value={editingJar.name} onChange={e => setEditingJar({...editingJar, name: e.target.value})} className="w-full border-b border-gray-300 p-2 mb-6 outline-none text-xl" />
-                <div className="flex justify-end gap-2">
-                    <button onClick={() => setEditingJar(null)} className="px-4 py-2 text-gray-500">{t.cancel}</button>
-                    <button onClick={handleRenameJar} className="px-4 py-2 bg-morandi-charcoal text-white rounded-lg">{t.save}</button>
-                </div>
-            </div>
-         </div>
       )}
 
       {/* 6. Rename Shelf Modal */}
@@ -652,6 +640,8 @@ function App() {
 
   const renderDetail = () => {
     if (!activeJar) return null;
+    const canViewHistory = activeJar.stars.length >= 20;
+
     return (
       <div className="min-h-screen flex flex-col items-center bg-morandi-bg relative overflow-hidden font-sans text-morandi-text">
         <div className="absolute top-8 left-8 z-40">
@@ -664,12 +654,39 @@ function App() {
             <div className="flex flex-col gap-6 w-full max-w-md">
                 <div className="bg-white p-8 rounded-3xl shadow-xl border border-white/50">
                     <div className="flex justify-between items-start">
-                        <h2 className="text-4xl font-bold text-morandi-charcoal mb-2">{activeJar.name}</h2>
-                        <button onClick={() => setContextMenuJar(activeJar)} className="p-2 text-gray-400 hover:text-morandi-charcoal"><Edit2 size={20}/></button>
+                        {isEditingName ? (
+                            <div className="flex items-center gap-2 w-full mb-2">
+                                <input 
+                                    autoFocus
+                                    type="text" 
+                                    value={tempJarName} 
+                                    onChange={(e) => setTempJarName(e.target.value)}
+                                    className="text-3xl font-bold text-morandi-charcoal border-b-2 border-morandi-slate outline-none w-full"
+                                />
+                                <button onClick={handleSaveJarName} className="p-2 bg-green-100 text-green-600 rounded-full hover:bg-green-200"><Check size={20}/></button>
+                                <button onClick={() => setIsEditingName(false)} className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200"><X size={20}/></button>
+                            </div>
+                        ) : (
+                            <>
+                                <h2 className="text-4xl font-bold text-morandi-charcoal mb-2 break-all">{activeJar.name}</h2>
+                                <button onClick={() => { setIsEditingName(true); setTempJarName(activeJar.name); }} className="p-2 text-gray-400 hover:text-morandi-charcoal"><Edit2 size={20}/></button>
+                            </>
+                        )}
                     </div>
+                    
                     <p className="text-morandi-text mb-8 text-lg"><span className="font-bold text-morandi-slate text-2xl">{activeJar.stars.length}</span> {t.starsCollected}</p>
+                    
                     <button onClick={startFolding} className="w-full py-4 bg-morandi-charcoal text-white rounded-xl shadow-lg hover:bg-morandi-slate transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3 text-xl font-bold"><Plus size={24} /> {t.foldStar}</button>
-                    <button onClick={handleReflect} className="w-full mt-4 py-3 bg-white border-2 border-morandi-sage text-morandi-sage font-bold rounded-xl hover:bg-morandi-sage hover:text-white transition-colors flex items-center justify-center gap-2"><Sparkles size={18} /> {t.reflectAI}</button>
+                    
+                    <div className="flex gap-2 mt-4">
+                        <button onClick={handleReflect} className="flex-1 py-3 bg-white border-2 border-morandi-sage text-morandi-sage font-bold rounded-xl hover:bg-morandi-sage hover:text-white transition-colors flex items-center justify-center gap-2"><Sparkles size={18} /> {t.reflectAI}</button>
+                        
+                        {/* History Button - Only shows if stars >= 20 */}
+                        {canViewHistory && (
+                             <button onClick={() => setShowHistoryModal(true)} className="flex-1 py-3 bg-white border-2 border-morandi-slate text-morandi-slate font-bold rounded-xl hover:bg-morandi-slate hover:text-white transition-colors flex items-center justify-center gap-2 animate-in fade-in"><History size={18} /> {t.viewHistory}</button>
+                        )}
+                    </div>
+
                 </div>
                 <div className="bg-white/50 p-6 rounded-3xl max-h-60 overflow-y-auto">
                     <h3 className="text-sm font-bold text-morandi-text uppercase tracking-wider mb-4">{t.recentMemories}</h3>
@@ -682,6 +699,37 @@ function App() {
             </div>
         </div>
         
+        {/* Detail Modals */}
+        
+        {/* History Modal */}
+        {showHistoryModal && (
+             <div className="fixed inset-0 bg-white/90 backdrop-blur-sm z-[90] flex items-center justify-center p-6">
+                <div className="bg-white p-8 rounded-3xl shadow-2xl max-w-2xl w-full h-[80vh] flex flex-col border border-morandi-slate/20">
+                    <div className="flex justify-between items-center mb-6">
+                         <h3 className="text-3xl font-bold text-morandi-charcoal flex items-center gap-3"><Calendar className="text-morandi-slate"/> {t.historyTitle}</h3>
+                         <button onClick={() => setShowHistoryModal(false)} className="p-2 hover:bg-gray-100 rounded-full"><X size={24} /></button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto pr-4 space-y-6">
+                        {activeJar.stars.slice().reverse().map((star, index) => (
+                            <div key={star.id} className="flex gap-4 group">
+                                <div className="flex flex-col items-center">
+                                    <div className="w-3 h-3 rounded-full bg-morandi-slate mt-2 group-hover:scale-125 transition-transform"></div>
+                                    <div className="w-0.5 h-full bg-gray-200 my-1"></div>
+                                </div>
+                                <div className="flex-1 pb-4">
+                                    <span className="text-sm font-bold text-morandi-slate uppercase tracking-wider">{new Date(star.date).toLocaleString()}</span>
+                                    <div className="mt-1 p-4 bg-morandi-bg/50 rounded-xl text-lg font-medium text-morandi-charcoal border-l-4 border-morandi-slate/30">
+                                        "{star.content}"
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+             </div>
+        )}
+
+        {/* Reflection Modal */}
         {isReflecting && (
              <div className="fixed inset-0 bg-morandi-charcoal/30 backdrop-blur-md z-[80] flex items-center justify-center p-6">
                 <div className="bg-white p-8 rounded-3xl shadow-2xl max-w-lg w-full relative border-4 border-white">
